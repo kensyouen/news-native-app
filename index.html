@@ -2,52 +2,25 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- スマホのネイティブアプリっぽく見せるためのおまじない -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>資産形成AIニュース</title>
+  <!-- Markdownを綺麗に表示する部品 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* アプリ全体のデザイン */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0; padding: 0; background-color: #f2f2f7; color: #333;
-      padding-bottom: 70px; /* 下のタブバーが被らないように */
-    }
-    header {
-      background-color: #fff; padding: 15px; text-align: center;
-      font-size: 18px; font-weight: bold; border-bottom: 1px solid #ddd;
-      position: sticky; top: 0; z-index: 1000;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background-color: #f2f2f7; color: #333; padding-bottom: 70px; }
+    header { background-color: #fff; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 1000; }
     .content { padding: 15px; display: none; }
     .content.active { display: block; }
-    
-    /* ボタンのデザイン */
-    .btn {
-      display: block; width: 100%; padding: 15px;
-      background-color: #007aff; color: #fff; text-align: center;
-      border-radius: 10px; font-size: 16px; font-weight: bold;
-      border: none; cursor: pointer; margin-top: 10px;
-    }
+    .btn { display: block; width: 100%; padding: 15px; background-color: #007aff; color: #fff; text-align: center; border-radius: 10px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
     .btn:active { background-color: #005bb5; }
-    
-    /* カード（白い枠）のデザイン */
-    .card {
-      background: #fff; padding: 15px; border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px;
-    }
-    
-    /* 下に固定されるボトムタブバー */
-    .bottom-nav {
-      position: fixed; bottom: 0; width: 100%;
-      background: #fff; border-top: 1px solid #ddd;
-      display: flex; justify-content: space-around;
-      padding-bottom: env(safe-area-inset-bottom); /* iPhoneのホームバー対応 */
-    }
-    .nav-item {
-      flex: 1; text-align: center; padding: 10px 0;
-      font-size: 12px; color: #888; cursor: pointer;
-    }
+    .card { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+    .nav-item { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; color: #888; cursor: pointer; }
     .nav-item.active { color: #007aff; font-weight: bold; }
     .nav-icon { font-size: 24px; display: block; margin-bottom: 3px; }
+    input, select, textarea { width: 100%; padding: 10px; border-radius:5px; border:1px solid #ccc; box-sizing:border-box; margin-bottom: 10px; font-size: 16px;}
+    details { background: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ddd; }
+    summary { font-weight: bold; padding: 5px 0; cursor: pointer; outline: none; }
   </style>
 </head>
 <body>
@@ -58,9 +31,9 @@
   <div id="tab-home" class="content active">
     <div class="card">
       <h3>📰 今日の分析</h3>
-      <p>ボタンを押すと最新ニュースを分析し、履歴に保存します。</p>
-      <button class="btn" onclick="alert('※後ほどGASと合体させると動きます！')">今日のニュースを分析</button>
-      <div id="news-result" style="margin-top:15px;"></div>
+      <p>※分析ボタンを押すとスプレッドシートに保存されます。</p>
+      <button class="btn" onclick="runAnalysis()">手動で今日のニュースを分析</button>
+      <div id="news-result" style="margin-top:15px; line-height: 1.6;"></div>
     </div>
   </div>
 
@@ -68,9 +41,9 @@
   <div id="tab-chat" class="content">
     <div class="card">
       <h3>💬 深掘りチャット</h3>
-      <p>今日のニュースについてAIに質問できます。</p>
-      <input type="text" style="width: 100%; padding: 10px; border-radius:5px; border:1px solid #ccc; box-sizing:border-box;" placeholder="例：住宅ローンへの影響は？">
-      <button class="btn" style="background-color: #34c759; margin-top:10px;">送信</button>
+      <div id="chat-box" style="margin-bottom: 15px; max-height: 300px; overflow-y: auto; line-height: 1.5;"></div>
+      <input type="text" id="chat-input" placeholder="例：住宅ローンへの影響は？">
+      <button class="btn" style="background-color: #34c759;" onclick="sendChat()">AIに質問を送信</button>
     </div>
   </div>
 
@@ -78,10 +51,15 @@
   <div id="tab-settings" class="content">
     <div class="card">
       <h3>⚙️ LINE自動通知の設定</h3>
-      <p>自動でLINEに通知する曜日と時間を設定します。</p>
-      <select style="width:100%; padding:10px; margin-bottom:10px;"><option>毎日</option><option>平日(月〜金)</option></select>
-      <select style="width:100%; padding:10px; margin-bottom:10px;"><option>08:00</option><option>12:00</option></select>
-      <button class="btn">設定を保存する</button>
+      <label>📅 通知する曜日</label>
+      <select id="set-day"><option>毎日</option><option>平日(月〜金)</option><option>週末(土日)</option><option>月</option><option>火</option><option>水</option><option>木</option><option>金</option><option>土</option><option>日</option></select>
+      <label>⏰ 通知する時間</label>
+      <select id="set-time">
+        <option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option><option>12:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>21:00</option>
+      </select>
+      <label>🔍 監視キーワード (カンマ区切り)</label>
+      <textarea id="set-kw" rows="4">中国経済, 米国経済, 日本経済, ウクライナ情勢, イラン情勢, 日本政府の財政政策, 日銀金融政策, 円・為替, 日本政府の減税・増税・給付金</textarea>
+      <button class="btn" onclick="saveSettings()">設定を保存する</button>
     </div>
   </div>
 
@@ -89,7 +67,8 @@
   <div id="tab-history" class="content">
     <div class="card">
       <h3>📚 過去の記録</h3>
-      <button class="btn" style="background-color: #ff9500;">履歴を読み込む</button>
+      <button class="btn" style="background-color: #ff9500;" onclick="loadHistory()">履歴を読み込む</button>
+      <div id="history-box" style="margin-top:15px; line-height: 1.5;"></div>
     </div>
   </div>
 
@@ -101,13 +80,119 @@
     <div class="nav-item" onclick="switchTab('tab-history', this)"><span class="nav-icon">📚</span>記録</div>
   </div>
 
-  <!-- タブを切り替えるためのJavaScript -->
   <script>
+    // ==========================================
+    // ⚠️【超重要】ここにGASのウェブアプリURLを貼り付ける！
+    // ==========================================
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzeGtPc_yYXocVEs4fOZUGm8rL1v9Fpw4pKOft4Ty8PM8sH6EevAbsgdSX39Wa8drhm/exec";
+    
+    let latestFullText = ""; // チャット用の文脈保持
+
+    // タブ切り替え関数
     function switchTab(tabId, element) {
       document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       element.classList.add('active');
+    }
+
+    // JSONP通信の魔法の関数（Safariのブロック回避用）
+    function fetchJSONP(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+        script.onerror = () => reject(new Error('通信エラー'));
+        document.body.appendChild(script);
+      });
+    }
+
+    // 1. 今日の分析を実行
+    async function runAnalysis() {
+      const resultBox = document.getElementById('news-result');
+      resultBox.innerHTML = "<b>⏳ AIが最新ニュースを分析中...（数十秒かかります）</b>";
+      try {
+        const data = await fetchJSONP(GAS_URL + "?action=analyze");
+        if(data.status === "success") {
+          resultBox.innerHTML = marked.parse(data.data.displayText);
+          latestFullText = encodeURIComponent(data.data.fullText);
+          alert("分析完了！スプレッドシートに保存しました。");
+        } else {
+          resultBox.innerHTML = "<span style='color:red;'>エラーが発生しました。</span>";
+        }
+      } catch(e) {
+        resultBox.innerHTML = "<span style='color:red;'>通信エラー。URLが正しいか確認してください。</span>";
+      }
+    }
+
+    // 2. 深掘りチャット
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value;
+      if(!msg) return;
+      
+      const chatBox = document.getElementById('chat-box');
+      chatBox.innerHTML += `<div style="background:#e5e5ea; padding:10px; border-radius:10px; margin-bottom:10px;"><b>あなた:</b><br>${msg}</div>`;
+      input.value = "";
+      
+      const loadingId = "load-" + Date.now();
+      chatBox.innerHTML += `<div id="${loadingId}" style="margin-bottom:10px;">⏳ AIが考え中...</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const data = await fetchJSONP(`${GAS_URL}?action=chat&message=${encodeURIComponent(msg)}&context=${latestFullText}`);
+        document.getElementById(loadingId).remove();
+        if(data.status === "success") {
+          chatBox.innerHTML += `<div style="background:#e1f5fe; padding:10px; border-radius:10px; margin-bottom:10px;"><b>AI:</b><br>${marked.parse(data.reply)}</div>`;
+        } else {
+          chatBox.innerHTML += `<div style="color:red;">エラーが発生しました。</div>`;
+        }
+      } catch(e) {
+        document.getElementById(loadingId).remove();
+        chatBox.innerHTML += `<div style="color:red;">通信エラーが発生しました。</div>`;
+      }
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 3. 設定を保存
+    async function saveSettings() {
+      const day = document.getElementById('set-day').value;
+      const time = document.getElementById('set-time').value;
+      const kw = document.getElementById('set-kw').value;
+      alert("設定を保存しています...");
+      try {
+        const data = await fetchJSONP(`${GAS_URL}?action=save_settings&day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}&keywords=${encodeURIComponent(kw)}`);
+        if(data.status === "success") {
+          alert("設定を保存しました！GASのタイマーに反映されます。");
+        }
+      } catch(e) {
+        alert("通信エラーが発生しました。");
+      }
+    }
+
+    // 4. 履歴を読み込む
+    async function loadHistory() {
+      const historyBox = document.getElementById('history-box');
+      historyBox.innerHTML = "<b>⏳ スプレッドシートから読み込み中...</b>";
+      try {
+        const data = await fetchJSONP(GAS_URL + "?action=get_history");
+        if(data.status === "success") {
+          let html = "";
+          data.history.forEach(row => {
+            if(row.length >= 3) {
+              html += `<details><summary>🗓️ ${row[0]}</summary><p><b>📰 ニュース概要</b><br>${row[1]}</p><p><b>💰 アドバイス</b><br>${row[2]}</p></details>`;
+            }
+          });
+          historyBox.innerHTML = html || "記録がありません。";
+        }
+      } catch(e) {
+        historyBox.innerHTML = "<span style='color:red;'>通信エラーが発生しました。</span>";
+      }
     }
   </script>
 </body>
