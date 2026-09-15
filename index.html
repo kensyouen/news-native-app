@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- スマホのネイティブアプリっぽく見せるためのおまじない -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>資産形成AIニュース</title>
+  <style>
+    /* アプリ全体のデザイン */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0; padding: 0; background-color: #f2f2f7; color: #333;
+      padding-bottom: 70px; /* 下のタブバーが被らないように */
+    }
+    header {
+      background-color: #fff; padding: 15px; text-align: center;
+      font-size: 18px; font-weight: bold; border-bottom: 1px solid #ddd;
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .content { padding: 15px; display: none; }
+    .content.active { display: block; }
+    
+    /* ボタンのデザイン */
+    .btn {
+      display: block; width: 100%; padding: 15px;
+      background-color: #007aff; color: #fff; text-align: center;
+      border-radius: 10px; font-size: 16px; font-weight: bold;
+      border: none; cursor: pointer; margin-top: 10px;
+    }
+    .btn:active { background-color: #005bb5; }
+    
+    /* カード（白い枠）のデザイン */
+    .card {
+      background: #fff; padding: 15px; border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px;
+    }
+    
+    /* 下に固定されるボトムタブバー */
+    .bottom-nav {
+      position: fixed; bottom: 0; width: 100%;
+      background: #fff; border-top: 1px solid #ddd;
+      display: flex; justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom); /* iPhoneのホームバー対応 */
+    }
+    .nav-item {
+      flex: 1; text-align: center; padding: 10px 0;
+      font-size: 12px; color: #888; cursor: pointer;
+    }
+    .nav-item.active { color: #007aff; font-weight: bold; }
+    .nav-icon { font-size: 24px; display: block; margin-bottom: 3px; }
+  </style>
+</head>
+<body>
+
+  <header>🌍 資産形成AIニュース</header>
+
+  <!-- タブ1: 今日の分析 -->
+  <div id="tab-home" class="content active">
+    <div class="card">
+      <h3>📰 今日の分析</h3>
+      <p>ボタンを押すと最新ニュースを分析し、履歴に保存します。</p>
+      <button class="btn" onclick="alert('※後ほどGASと合体させると動きます！')">今日のニュースを分析</button>
+      <div id="news-result" style="margin-top:15px;"></div>
+    </div>
+  </div>
+
+  <!-- タブ2: 深掘りチャット -->
+  <div id="tab-chat" class="content">
+    <div class="card">
+      <h3>💬 深掘りチャット</h3>
+      <p>今日のニュースについてAIに質問できます。</p>
+      <input type="text" style="width: 100%; padding: 10px; border-radius:5px; border:1px solid #ccc; box-sizing:border-box;" placeholder="例：住宅ローンへの影響は？">
+      <button class="btn" style="background-color: #34c759; margin-top:10px;">送信</button>
+    </div>
+  </div>
+
+  <!-- タブ3: 通知設定 -->
+  <div id="tab-settings" class="content">
+    <div class="card">
+      <h3>⚙️ LINE自動通知の設定</h3>
+      <p>自動でLINEに通知する曜日と時間を設定します。</p>
+      <select style="width:100%; padding:10px; margin-bottom:10px;"><option>毎日</option><option>平日(月〜金)</option></select>
+      <select style="width:100%; padding:10px; margin-bottom:10px;"><option>08:00</option><option>12:00</option></select>
+      <button class="btn">設定を保存する</button>
+    </div>
+  </div>
+
+  <!-- タブ4: 過去の記録 -->
+  <div id="tab-history" class="content">
+    <div class="card">
+      <h3>📚 過去の記録</h3>
+      <button class="btn" style="background-color: #ff9500;">履歴を読み込む</button>
+    </div>
+  </div>
+
+  <!-- ボトムタブバー -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('tab-home', this)"><span class="nav-icon">📰</span>ホーム</div>
+    <div class="nav-item" onclick="switchTab('tab-chat', this)"><span class="nav-icon">💬</span>チャット</div>
+    <div class="nav-item" onclick="switchTab('tab-settings', this)"><span class="nav-icon">⚙️</span>設定</div>
+    <div class="nav-item" onclick="switchTab('tab-history', this)"><span class="nav-icon">📚</span>記録</div>
+  </div>
+
+  <!-- タブを切り替えるためのJavaScript -->
+  <script>
+    function switchTab(tabId, element) {
+      document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+    }
+  </script>
+</body>
+</html>
