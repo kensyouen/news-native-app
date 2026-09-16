@@ -86,9 +86,8 @@
     // ==========================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbytIFzar-LOKVnX3HbZhXAQegCTsGSjIleR4_cq3UMp5WAGmTXmP1aQhUUe4rSk5yHA/exec";
     
-    let latestFullText = ""; // チャット用の文脈保持
+    let latestFullText = ""; 
 
-    // タブ切り替え関数
     function switchTab(tabId, element) {
       document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
@@ -96,7 +95,6 @@
       element.classList.add('active');
     }
 
-    // JSONP通信の魔法の関数（Safariのブロック回避用）
     function fetchJSONP(url) {
       return new Promise((resolve, reject) => {
         const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
@@ -112,7 +110,7 @@
       });
     }
 
-    // 1. 今日の分析を実行
+    // 1. 今日の分析を実行（エラー詳細表示を追加！）
     async function runAnalysis() {
       const resultBox = document.getElementById('news-result');
       resultBox.innerHTML = "<b>⏳ AIが最新ニュースを分析中...（数十秒かかります）</b>";
@@ -123,10 +121,11 @@
           latestFullText = encodeURIComponent(data.data.fullText);
           alert("分析完了！スプレッドシートに保存しました。");
         } else {
-          resultBox.innerHTML = "<span style='color:red;'>エラーが発生しました。</span>";
+          // ★GASの裏側で起きたエラーの理由を画面にそのまま出します！
+          resultBox.innerHTML = "<span style='color:red;'><b>GASエラー発生:</b><br>" + data.message + "</span>";
         }
       } catch(e) {
-        resultBox.innerHTML = "<span style='color:red;'>通信エラー。URLが正しいか確認してください。</span>";
+        resultBox.innerHTML = "<span style='color:red;'>通信エラー。Safariのプライベートモードで開くか、URLを確認してください。</span>";
       }
     }
 
@@ -150,7 +149,7 @@
         if(data.status === "success") {
           chatBox.innerHTML += `<div style="background:#e1f5fe; padding:10px; border-radius:10px; margin-bottom:10px;"><b>AI:</b><br>${marked.parse(data.reply)}</div>`;
         } else {
-          chatBox.innerHTML += `<div style="color:red;">エラーが発生しました。</div>`;
+          chatBox.innerHTML += `<div style="color:red;">GASエラー: ${data.message}</div>`;
         }
       } catch(e) {
         document.getElementById(loadingId).remove();
@@ -169,6 +168,8 @@
         const data = await fetchJSONP(`${GAS_URL}?action=save_settings&day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}&keywords=${encodeURIComponent(kw)}`);
         if(data.status === "success") {
           alert("設定を保存しました！GASのタイマーに反映されます。");
+        } else {
+          alert("GASエラー: " + data.message);
         }
       } catch(e) {
         alert("通信エラーが発生しました。");
@@ -189,6 +190,8 @@
             }
           });
           historyBox.innerHTML = html || "記録がありません。";
+        } else {
+          historyBox.innerHTML = "<span style='color:red;'>GASエラー: " + data.message + "</span>";
         }
       } catch(e) {
         historyBox.innerHTML = "<span style='color:red;'>通信エラーが発生しました。</span>";
