@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- ✨ ネイティブアプリ化のアイコンと設定を追加！ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f4f0.png">
   <title>資産形成AIニュース</title>
-  <!-- Markdownを綺麗に表示する部品 -->
+  
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background-color: #f2f2f7; color: #333; padding-bottom: 70px; }
@@ -13,6 +17,7 @@
     .content.active { display: block; }
     .btn { display: block; width: 100%; padding: 15px; background-color: #007aff; color: #fff; text-align: center; border-radius: 10px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
     .btn:active { background-color: #005bb5; }
+    .btn:disabled { background-color: #999; cursor: not-allowed; }
     .card { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
     .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
     .nav-item { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; color: #888; cursor: pointer; }
@@ -32,7 +37,7 @@
     <div class="card">
       <h3>📰 今日の分析</h3>
       <p>※分析ボタンを押すとスプレッドシートに保存されます。</p>
-      <button class="btn" onclick="runAnalysis()">手動で今日のニュースを分析</button>
+      <button class="btn" id="btn-analyze" onclick="runAnalysis()">手動で今日のニュースを分析</button>
       <div id="news-result" style="margin-top:15px; line-height: 1.6;"></div>
     </div>
   </div>
@@ -53,13 +58,20 @@
       <h3>⚙️ LINE自動通知の設定</h3>
       <label>📅 通知する曜日</label>
       <select id="set-day"><option>毎日</option><option>平日(月〜金)</option><option>週末(土日)</option><option>月</option><option>火</option><option>水</option><option>木</option><option>金</option><option>土</option><option>日</option></select>
+      
       <label>⏰ 通知する時間</label>
+      <!-- ✨ 0時から23時まで1時間単位で選択可能に！ -->
       <select id="set-time">
-        <option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option><option>12:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>21:00</option>
+        <option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option><option>04:00</option>
+        <option>05:00</option><option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option>
+        <option>10:00</option><option>11:00</option><option>12:00</option><option>13:00</option><option>14:00</option>
+        <option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option>
+        <option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option>
       </select>
+      
       <label>🔍 監視キーワード (カンマ区切り)</label>
       <textarea id="set-kw" rows="4">中国経済, 米国経済, 日本経済, ウクライナ情勢, イラン情勢, 日本政府の財政政策, 日銀金融政策, 円・為替, 日本政府の減税・増税・給付金</textarea>
-      <button class="btn" onclick="saveSettings()">設定を保存する</button>
+      <button class="btn" id="save-btn" onclick="saveSettings()">設定を保存する</button>
     </div>
   </div>
 
@@ -67,12 +79,11 @@
   <div id="tab-history" class="content">
     <div class="card">
       <h3>📚 過去の記録</h3>
-      <button class="btn" style="background-color: #ff9500;" onclick="loadHistory()">履歴を読み込む</button>
+      <button class="btn" id="btn-history" style="background-color: #ff9500;" onclick="loadHistory()">履歴を読み込む</button>
       <div id="history-box" style="margin-top:15px; line-height: 1.5;"></div>
     </div>
   </div>
 
-  <!-- ボトムタブバー -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="switchTab('tab-home', this)"><span class="nav-icon">📰</span>ホーム</div>
     <div class="nav-item" onclick="switchTab('tab-chat', this)"><span class="nav-icon">💬</span>チャット</div>
@@ -110,23 +121,30 @@
       });
     }
 
-    // 1. 今日の分析を実行（エラー詳細表示を追加！）
+    // 1. 今日の分析
     async function runAnalysis() {
+      const btn = document.getElementById('btn-analyze');
       const resultBox = document.getElementById('news-result');
-      resultBox.innerHTML = "<b>⏳ AIが最新ニュースを分析中...（数十秒かかります）</b>";
+      
+      btn.innerText = "⏳ AIが分析中...";
+      btn.disabled = true;
+      resultBox.innerHTML = "<b>最新ニュースを取得して分析しています...（数十秒かかります）</b>";
+      
       try {
         const data = await fetchJSONP(GAS_URL + "?action=analyze");
         if(data.status === "success") {
           resultBox.innerHTML = marked.parse(data.data.displayText);
           latestFullText = encodeURIComponent(data.data.fullText);
-          alert("分析完了！スプレッドシートに保存しました。");
+          btn.innerText = "✅ 保存完了！";
         } else {
-          // ★GASの裏側で起きたエラーの理由を画面にそのまま出します！
-          resultBox.innerHTML = "<span style='color:red;'><b>GASエラー発生:</b><br>" + data.message + "</span>";
+          resultBox.innerHTML = "<span style='color:red;'><b>GASエラー:</b><br>" + data.message + "</span>";
+          btn.innerText = "❌ エラー";
         }
       } catch(e) {
-        resultBox.innerHTML = "<span style='color:red;'>通信エラー。Safariのプライベートモードで開くか、URLを確認してください。</span>";
+        resultBox.innerHTML = "<span style='color:red;'>通信エラー。URLを確認してください。</span>";
+        btn.innerText = "❌ 通信エラー";
       }
+      setTimeout(() => { btn.innerText = "手動で今日のニュースを分析"; btn.disabled = false; }, 3000);
     }
 
     // 2. 深掘りチャット
@@ -158,28 +176,43 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 3. 設定を保存
+    // 3. 設定を保存（ポップアップをやめてボタンの文字を変える方式に！）
     async function saveSettings() {
+      const btn = document.getElementById('save-btn');
       const day = document.getElementById('set-day').value;
       const time = document.getElementById('set-time').value;
       const kw = document.getElementById('set-kw').value;
-      alert("設定を保存しています...");
+      
+      btn.innerText = "⏳ 保存しています...";
+      btn.disabled = true;
+      
       try {
         const data = await fetchJSONP(`${GAS_URL}?action=save_settings&day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}&keywords=${encodeURIComponent(kw)}`);
         if(data.status === "success") {
-          alert("設定を保存しました！GASのタイマーに反映されます。");
+          btn.innerText = "✅ 設定を保存しました！";
         } else {
-          alert("GASエラー: " + data.message);
+          btn.innerText = "❌ GASエラー: " + data.message;
         }
       } catch(e) {
-        alert("通信エラーが発生しました。");
+        btn.innerText = "❌ 通信エラー";
       }
+      
+      // 3秒後に元のボタンに戻す
+      setTimeout(() => {
+        btn.innerText = "設定を保存する";
+        btn.disabled = false;
+      }, 3000);
     }
 
     // 4. 履歴を読み込む
     async function loadHistory() {
+      const btn = document.getElementById('btn-history');
       const historyBox = document.getElementById('history-box');
-      historyBox.innerHTML = "<b>⏳ スプレッドシートから読み込み中...</b>";
+      
+      btn.innerText = "⏳ 読み込み中...";
+      btn.disabled = true;
+      historyBox.innerHTML = "<b>スプレッドシートから取得しています...</b>";
+      
       try {
         const data = await fetchJSONP(GAS_URL + "?action=get_history");
         if(data.status === "success") {
@@ -190,12 +223,16 @@
             }
           });
           historyBox.innerHTML = html || "記録がありません。";
+          btn.innerText = "✅ 読み込み完了！";
         } else {
           historyBox.innerHTML = "<span style='color:red;'>GASエラー: " + data.message + "</span>";
+          btn.innerText = "❌ エラー";
         }
       } catch(e) {
         historyBox.innerHTML = "<span style='color:red;'>通信エラーが発生しました。</span>";
+        btn.innerText = "❌ 通信エラー";
       }
+      setTimeout(() => { btn.innerText = "履歴を読み込む"; btn.disabled = false; }, 3000);
     }
   </script>
 </body>
