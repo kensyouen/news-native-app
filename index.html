@@ -144,7 +144,7 @@
       chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
-        const data = await fetchJSONP(`${GAS_URL}?action=chat&message=${encodeURIComponent(msg)}&context=${latestFullText}`);
+        const data = await fetchJSONP(`${GAS_URL}?action=chat&message=${encodeURIComponent(msg)}`);
         document.getElementById(loadingId).remove();
         if(data.status === "success") {
           chatBox.innerHTML += `<div style="background:#e1f5fe; padding:10px; border-radius:10px; margin-bottom:10px;"><b>AI:</b><br>${marked.parse(data.reply)}</div>`;
