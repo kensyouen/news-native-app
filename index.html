@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!-- ✨ ネイティブアプリ化のアイコンと設定を追加！ -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f4f0.png">
@@ -60,7 +59,6 @@
       <select id="set-day"><option>毎日</option><option>平日(月〜金)</option><option>週末(土日)</option><option>月</option><option>火</option><option>水</option><option>木</option><option>金</option><option>土</option><option>日</option></select>
       
       <label>⏰ 通知する時間</label>
-      <!-- ✨ 0時から23時まで1時間単位で選択可能に！ -->
       <select id="set-time">
         <option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option><option>04:00</option>
         <option>05:00</option><option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option>
@@ -84,6 +82,7 @@
     </div>
   </div>
 
+  <!-- ボトムタブバー -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="switchTab('tab-home', this)"><span class="nav-icon">📰</span>ホーム</div>
     <div class="nav-item" onclick="switchTab('tab-chat', this)"><span class="nav-icon">💬</span>チャット</div>
@@ -98,6 +97,19 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbytIFzar-LOKVnX3HbZhXAQegCTsGSjIleR4_cq3UMp5WAGmTXmP1aQhUUe4rSk5yHA/exec";
     
     let latestFullText = ""; 
+
+    // ✨【追加機能】アプリを開いた時に、スマホの記憶から前回の設定を復元する
+    window.onload = function() {
+      if (localStorage.getItem("savedDay")) {
+        document.getElementById('set-day').value = localStorage.getItem("savedDay");
+      }
+      if (localStorage.getItem("savedTime")) {
+        document.getElementById('set-time').value = localStorage.getItem("savedTime");
+      }
+      if (localStorage.getItem("savedKw")) {
+        document.getElementById('set-kw').value = localStorage.getItem("savedKw");
+      }
+    };
 
     function switchTab(tabId, element) {
       document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
@@ -176,12 +188,17 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 3. 設定を保存（ポップアップをやめてボタンの文字を変える方式に！）
+    // 3. 設定を保存
     async function saveSettings() {
       const btn = document.getElementById('save-btn');
       const day = document.getElementById('set-day').value;
       const time = document.getElementById('set-time').value;
       const kw = document.getElementById('set-kw').value;
+      
+      // ✨【追加機能】スマホ本体の記憶（ローカルストレージ）にも保存する！
+      localStorage.setItem("savedDay", day);
+      localStorage.setItem("savedTime", time);
+      localStorage.setItem("savedKw", kw);
       
       btn.innerText = "⏳ 保存しています...";
       btn.disabled = true;
@@ -197,7 +214,6 @@
         btn.innerText = "❌ 通信エラー";
       }
       
-      // 3秒後に元のボタンに戻す
       setTimeout(() => {
         btn.innerText = "設定を保存する";
         btn.disabled = false;
